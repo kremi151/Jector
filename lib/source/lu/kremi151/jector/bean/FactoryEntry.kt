@@ -20,7 +20,6 @@ import lu.kremi151.jector.enums.Priority
 import lu.kremi151.jector.interfaces.BeanFactory
 
 data class FactoryEntry (
-        val holder: Any,
         val factory: BeanFactory<*>,
         val priority: Priority,
         val lazy: Boolean

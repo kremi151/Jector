@@ -50,6 +50,15 @@ class Jector: AutoConfigurator {
         factoriesList.sortBy { it.priority.ordinal }
     }
 
+    private fun addFactoryRecursively(factory: BeanFactory<*>, primaryType: Class<*>, priority: Priority, lazy: Boolean) {
+        val factoryEntry = FactoryEntry(factory, priority, lazy)
+        var type: Class<*>? = primaryType
+        while (type != null && type != Object::class.java) {
+            addFactory(type, factoryEntry)
+            type = type.superclass
+        }
+    }
+
     fun collectProviders(obj: Any) {
         val methods = obj.javaClass.methods
         for (method in methods) {
@@ -64,12 +73,18 @@ class Jector: AutoConfigurator {
 
             @Suppress("UNCHECKED_CAST")
             val beanFactory = BeanReflectionFactory(obj, method, method.returnType as Class<Any>)
-            val factoryEntry = FactoryEntry(obj, beanFactory, providerMeta.priority, providerMeta.lazy)
-            var type: Class<*>? = primaryType
-            while (type != null && type != Object::class.java) {
-                addFactory(type, factoryEntry)
-                type = type.superclass
+            addFactoryRecursively(beanFactory, primaryType, providerMeta.priority, providerMeta.lazy)
+        }
+    }
+
+    fun collectProviders(factories: List<BeanFactory<*>>, priority: Priority, lazy: Boolean) {
+        for (factory in factories) {
+            val primaryType = factory.returnType
+            if (AutoConfigurator::class.java.isAssignableFrom(primaryType)) {
+                throw IllegalStateException("Providers of type ${AutoConfigurator::class.java} cannot be manually defined")
             }
+
+            addFactoryRecursively(factory, primaryType, priority, lazy)
         }
     }
 
@@ -84,7 +99,7 @@ class Jector: AutoConfigurator {
                 if (factory.lazy) {
                     // TODO: Add check for conflicts
                     val bean = Proxy.newProxyInstance(
-                            factory.holder.javaClass.classLoader,
+                            factory.factory.holderClassLoader,
                             arrayOf(factory.factory.returnType),
                             @Suppress("UNCHECKED_CAST")
                             LazyConfigurableValue(this, factory.factory as BeanFactory<Any>)

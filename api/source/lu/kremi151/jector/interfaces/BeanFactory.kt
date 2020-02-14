@@ -25,4 +25,6 @@ interface BeanFactory<T> {
 
     val returnType: Class<T>
 
+    val holderClassLoader: ClassLoader get() = returnType.classLoader
+
 }

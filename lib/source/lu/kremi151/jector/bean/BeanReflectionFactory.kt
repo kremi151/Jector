@@ -31,4 +31,7 @@ class BeanReflectionFactory<T>(
         return method.invoke(holder) as T
     }
 
+    override val holderClassLoader: ClassLoader
+        get() = holder.javaClass.classLoader
+
 }
