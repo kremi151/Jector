@@ -1,0 +1,24 @@
+apply plugin: "java-library"
+
+repositories {
+    jcenter()
+}
+
+jar {
+    archiveClassifier = "api"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'source'
+        }
+        resources {
+            srcDir 'resources'
+        }
+    }
+}
+
+dependencies {
+    compileOnly group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: kotlin_version
+}

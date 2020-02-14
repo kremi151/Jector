@@ -26,7 +26,7 @@ pipeline {
 	}
 	post {
 		always {
-			archiveArtifacts artifacts: 'build/libs/*.jar', onlyIfSuccessful: true
+			archiveArtifacts artifacts: '*/build/libs/*.jar', onlyIfSuccessful: true
 		}
 		success {
 			setBuildStatus('Build succeeded', 'SUCCESS')

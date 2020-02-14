@@ -1,0 +1,29 @@
+apply plugin: "java-library"
+
+repositories {
+    jcenter()
+}
+
+jar {
+    archiveClassifier = "lib"
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'source'
+        }
+        resources {
+            srcDir 'resources'
+        }
+    }
+}
+ 
+dependencies {
+    implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: kotlin_version
+	implementation project(':api')
+}
