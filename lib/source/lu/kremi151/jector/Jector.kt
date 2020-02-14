@@ -18,11 +18,9 @@ package lu.kremi151.jector
 
 import lu.kremi151.jector.annotations.Inject
 import lu.kremi151.jector.annotations.Provider
-import lu.kremi151.jector.bean.BeanEntry
-import lu.kremi151.jector.bean.FactoryEntry
-import lu.kremi151.jector.bean.InstantiatedBean
-import lu.kremi151.jector.bean.LazyConfigurableValue
+import lu.kremi151.jector.bean.*
 import lu.kremi151.jector.enums.Priority
+import lu.kremi151.jector.interfaces.BeanFactory
 import java.lang.IllegalStateException
 import java.lang.reflect.Field
 import java.lang.reflect.Proxy
@@ -64,7 +62,9 @@ class Jector: AutoConfigurator {
                 throw IllegalStateException("Providers of type ${AutoConfigurator::class.java} cannot be manually defined")
             }
 
-            val factoryEntry = FactoryEntry(obj, method, providerMeta.priority, providerMeta.lazy)
+            @Suppress("UNCHECKED_CAST")
+            val beanFactory = BeanReflectionFactory(obj, method, method.returnType as Class<Any>)
+            val factoryEntry = FactoryEntry(obj, beanFactory, providerMeta.priority, providerMeta.lazy)
             var type: Class<*>? = primaryType
             while (type != null && type != Object::class.java) {
                 addFactory(type, factoryEntry)
@@ -85,23 +85,25 @@ class Jector: AutoConfigurator {
                     // TODO: Add check for conflicts
                     val bean = Proxy.newProxyInstance(
                             factory.holder.javaClass.classLoader,
-                            arrayOf(factory.method.returnType),
-                            LazyConfigurableValue<Any>(this, factory.holder, factory.method)
+                            arrayOf(factory.factory.returnType),
+                            @Suppress("UNCHECKED_CAST")
+                            LazyConfigurableValue(this, factory.factory as BeanFactory<Any>)
                     )
-                    classToBean[bean.javaClass] = InstantiatedBean(bean, factory.method)
+                    classToBean[bean.javaClass] = InstantiatedBean(bean, factory.factory)
                     allBeans.add(BeanEntry(bean, bean.javaClass, factory.priority))
                 } else {
-                    val bean = factory.method.invoke(factory.holder)
+                    val bean = factory.factory.create()!!
                     val existingInstance = classToBean[bean.javaClass]
                     if (existingInstance != null) {
-                        if (existingInstance.method == factory.method) {
+                        if (existingInstance.factory == factory.factory) {
                             // Same factory method, therefore no collision
                             continue
                         } else {
                             throw IllegalStateException("Conflicting providers for type ${bean.javaClass}")
                         }
                     }
-                    classToBean[bean.javaClass] = InstantiatedBean(bean, factory.method)
+                    @Suppress("UNCHECKED_CAST")
+                    classToBean[bean.javaClass] = InstantiatedBean(bean, factory.factory as BeanFactory<Any>)
                     allBeans.add(BeanEntry(bean, bean.javaClass, factory.priority))
                 }
             }

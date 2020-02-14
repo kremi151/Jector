@@ -17,8 +17,18 @@
 package lu.kremi151.jector.bean
 
 import lu.kremi151.jector.interfaces.BeanFactory
+import java.lang.reflect.Method
 
-data class InstantiatedBean<T>(
-        val bean: T,
-        val factory: BeanFactory<T>
-)
+class BeanReflectionFactory<T>(
+        private val holder: Any,
+        private val method: Method,
+        override val returnType: Class<T>
+): BeanFactory<T> {
+
+    @Suppress("UNCHECKED_CAST")
+    override fun create(): T {
+        method.isAccessible = true
+        return method.invoke(holder) as T
+    }
+
+}

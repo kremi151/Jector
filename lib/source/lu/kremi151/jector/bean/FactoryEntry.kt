@@ -17,11 +17,11 @@
 package lu.kremi151.jector.bean
 
 import lu.kremi151.jector.enums.Priority
-import java.lang.reflect.Method
+import lu.kremi151.jector.interfaces.BeanFactory
 
 data class FactoryEntry (
         val holder: Any,
-        val method: Method,
+        val factory: BeanFactory<*>,
         val priority: Priority,
         val lazy: Boolean
 )

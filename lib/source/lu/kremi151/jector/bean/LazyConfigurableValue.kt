@@ -17,23 +17,21 @@
 package lu.kremi151.jector.bean
 
 import lu.kremi151.jector.AutoConfigurator
+import lu.kremi151.jector.interfaces.BeanFactory
 import java.lang.IllegalStateException
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 
 class LazyConfigurableValue<T: Any> (
         private val configurator: AutoConfigurator,
-        private val holder: Any,
-        private val factoryMethod: Method
+        private val beanFactory: BeanFactory<T>
 ): InvocationHandler {
 
     private lateinit var value: T
 
     override fun invoke(proxy: Any?, method: Method?, args: Array<out Any>?): Any {
         if (!::value.isInitialized) {
-            factoryMethod.isAccessible = true
-            @Suppress("UNCHECKED_CAST")
-            value = factoryMethod.invoke(holder) as T
+            value = beanFactory.create()
             configurator.autoConfigure(value)
         }
         if (method == null) {

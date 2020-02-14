@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package lu.kremi151.jector.bean
+package lu.kremi151.jector.interfaces
 
-import lu.kremi151.jector.interfaces.BeanFactory
+import java.lang.Exception
 
-data class InstantiatedBean<T>(
-        val bean: T,
-        val factory: BeanFactory<T>
-)
+interface BeanFactory<T> {
+
+    @Throws(Exception::class)
+    fun create(): T
+
+    val returnType: Class<T>
+
+}
