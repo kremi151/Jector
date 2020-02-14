@@ -36,4 +36,8 @@ subprojects {
             }
         }
     }
+
+	test {
+        useJUnitPlatform()
+    }
 }
