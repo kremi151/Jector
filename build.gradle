@@ -25,4 +25,15 @@ subprojects {
     targetCompatibility = 1.8
     
     archivesBaseName = 'Jector'
+
+    sourceSets {
+        test {
+            java {
+                srcDir 'source-test'
+            }
+            resources {
+                srcDir 'resources-test'
+            }
+        }
+    }
 }

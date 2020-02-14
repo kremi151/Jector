@@ -26,4 +26,6 @@ sourceSets {
 dependencies {
     implementation group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: kotlin_version
 	implementation project(':api')
+
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: libJunitVersion
 }

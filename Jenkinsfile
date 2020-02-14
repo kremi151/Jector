@@ -23,10 +23,16 @@ pipeline {
 				sh './gradlew build -x test'
 			}
 		}
+		stage('Test') {
+			steps {
+				sh './gradlew cleanTest test'
+			}
+		}
 	}
 	post {
 		always {
 			archiveArtifacts artifacts: '*/build/libs/*.jar', onlyIfSuccessful: true
+			junit '*/build/test-results/**/*.xml'
 		}
 		success {
 			setBuildStatus('Build succeeded', 'SUCCESS')
