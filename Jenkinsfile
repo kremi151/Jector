@@ -28,6 +28,16 @@ pipeline {
 				sh './gradlew cleanTest test'
 			}
 		}
+		stage('Publish') {
+		    environment {
+		        GITHUB_USERNAME = "kremi151"
+		    }
+		    steps {
+                withCredentials([string(credentialsId: "github_upload_packages_token", variable: "GITHUB_TOKEN")]) {
+                    sh './gradlew publish'
+                }
+		    }
+		}
 	}
 	post {
 		always {
