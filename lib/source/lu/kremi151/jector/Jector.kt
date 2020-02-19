@@ -20,6 +20,7 @@ import lu.kremi151.jector.annotations.Inject
 import lu.kremi151.jector.annotations.Provider
 import lu.kremi151.jector.bean.*
 import lu.kremi151.jector.enums.Priority
+import lu.kremi151.jector.exception.NotAnInterfaceException
 import lu.kremi151.jector.interfaces.BeanFactory
 import java.lang.IllegalStateException
 import java.lang.reflect.Field
@@ -28,11 +29,15 @@ import java.util.stream.Collectors
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-class Jector: AutoConfigurator {
+class Jector(
+        private val allowNonInterfaces: Boolean
+): AutoConfigurator {
 
     private val factories: MutableMap<Class<*>, MutableList<FactoryEntry>> = HashMap()
     private val allBeans: MutableList<BeanEntry<*>> = ArrayList()
     private val primaryBeans: MutableMap<Class<*>, Any> = HashMap()
+
+    constructor(): this(false)
 
     init {
         val beanEntry = BeanEntry(this, Jector::class.java, Priority.HIGHEST)
@@ -40,7 +45,10 @@ class Jector: AutoConfigurator {
         primaryBeans[AutoConfigurator::class.java] = arrayListOf(beanEntry)
     }
 
-    private fun addFactory(type: Class<*>, entry: FactoryEntry) {
+    private fun addFactory(type: Class<*>, entry: FactoryEntry): Boolean {
+        if (!allowNonInterfaces && !type.isInterface) {
+            return false
+        }
         var factoriesList = factories[type]
         if (factoriesList == null) {
             factoriesList = ArrayList()
@@ -48,14 +56,19 @@ class Jector: AutoConfigurator {
         }
         factoriesList.add(entry)
         factoriesList.sortBy { it.priority.ordinal }
+        return true
     }
 
     private fun addFactoryRecursively(factory: BeanFactory<*>, primaryType: Class<*>, priority: Priority, lazy: Boolean) {
         val factoryEntry = FactoryEntry(factory, priority, lazy)
         var type: Class<*>? = primaryType
+        var added = false
         while (type != null && type != Object::class.java) {
-            addFactory(type, factoryEntry)
+            added = addFactory(type, factoryEntry) || added
             type = type.superclass
+        }
+        if (!added) {
+            throw NotAnInterfaceException("Class $primaryType does not implement an interface. Only implementations of interfaces can act as a provider for the current Jector instance.")
         }
     }
 
@@ -187,6 +200,10 @@ class Jector: AutoConfigurator {
 
     private fun autoConfigureField(obj: Any, field: Field, annotation: Inject) {
         field.isAccessible = true
+
+        if (!allowNonInterfaces && !field.type.isInterface) {
+            throw NotAnInterfaceException("The type of field $field is ${field.type}, which is not an interface. Only implementations of interfaces can be injected by the current Jector instance.")
+        }
 
         if (List::class.java.isAssignableFrom(field.type)) {
             if (annotation.collectionType == Any::class) {

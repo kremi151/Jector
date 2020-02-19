@@ -19,6 +19,7 @@ package lu.kremi151.jector
 import lu.kremi151.jector.annotations.Inject
 import lu.kremi151.jector.annotations.Provider
 import lu.kremi151.jector.enums.Priority
+import lu.kremi151.jector.exception.NotAnInterfaceException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -210,7 +211,7 @@ class JectorTest {
     }
 
     @Test
-    fun testInheritanceInjection() {
+    fun testInheritanceInjectionDisallowNonInterfaces() {
         val appleJuiceImpl = AppleJuice(128)
         val configuration = object {
             @Provider fun createAppleJuice(): AppleJuice {
@@ -218,6 +219,18 @@ class JectorTest {
             }
         }
         val configurator = Jector()
+        assertThrows(NotAnInterfaceException::class.java) { configurator.collectProviders(configuration) }
+    }
+
+    @Test
+    fun testInheritanceInjectionAllowNonInterfaces() {
+        val appleJuiceImpl = AppleJuice(128)
+        val configuration = object {
+            @Provider fun createAppleJuice(): AppleJuice {
+               return appleJuiceImpl
+            }
+        }
+        val configurator = Jector(true)
         configurator.collectProviders(configuration)
         configurator.initializeBeans()
         val configurableObject = object {
@@ -257,7 +270,7 @@ class JectorTest {
     }
 
     @Test
-    fun testInjectionIntoBaseClasses() {
+    fun testInjectionIntoBaseClassesDisallowNonInterfaces() {
         val aImpl = object : AInterface {
             override fun getValue(): String {
                 return "_aBc_"
@@ -281,6 +294,34 @@ class JectorTest {
             }
         }
         val configurator = Jector()
+        assertThrows(NotAnInterfaceException::class.java) { configurator.collectProviders(configuration) }
+    }
+
+    @Test
+    fun testInjectionIntoBaseClassesAllowNonInterfaces() {
+        val aImpl = object : AInterface {
+            override fun getValue(): String {
+                return "_aBc_"
+            }
+        }
+        val cImpl = object : CInterface {
+            override fun takeItSleazy(): Boolean {
+                return true
+            }
+        }
+        val fruit = Apple(420)
+        val configuration = object {
+            @Provider fun createAInterfaceImpl(): AInterface {
+                return aImpl
+            }
+            @Provider fun createCInterfaceImpl(): CInterface {
+                return cImpl
+            }
+            @Provider fun createApple(): Apple {
+                return fruit
+            }
+        }
+        val configurator = Jector(true)
         configurator.collectProviders(configuration)
         configurator.initializeBeans()
         val configurableObject = ChildClassInjectable()
